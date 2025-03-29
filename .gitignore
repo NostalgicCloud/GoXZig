@@ -1,0 +1,4 @@
+# Zig build output directory
+zig-out/
+# Zig cache directory
+.zig-cache/
