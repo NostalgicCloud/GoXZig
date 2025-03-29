@@ -2,3 +2,8 @@
 zig-out/
 # Zig cache directory
 .zig-cache/
+
+#ignore all personal settings
+.vscode/
+
+*.exe
