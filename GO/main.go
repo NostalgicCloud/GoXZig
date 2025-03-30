@@ -51,7 +51,7 @@ func ReadInput() { // Return C.int so it can be called from C
 			ServerClose()
 			break
 		}
-		BroadcastMessageIternal(text)
+		BroadcastMessageIternal(text + "\n")
 	}
 	//return C.int(1) // Return success code
 }
