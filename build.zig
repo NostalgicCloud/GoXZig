@@ -1,10 +1,11 @@
 const std = @import("std");
 
 pub fn build(b: *std.Build) void {
+    const target = b.standardTargetOptions(.{});
     const exe = b.addExecutable(.{
-        .name = "basic",
+        .name = "ZigxGo",
         .root_source_file = b.path("src/main.zig"),
-        .target = b.standardTargetOptions(.{}),
+        .target = target,
         .optimize = b.standardOptimizeOption(.{}),
     });
     exe.linkLibC();
