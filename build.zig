@@ -8,11 +8,6 @@ pub fn build(b: *std.Build) void {
         .target = target,
         .optimize = b.standardOptimizeOption(.{}),
     });
-
-    const is_windows = target.result.os.tag == .windows;
-    if (!is_windows) {
-        exe.root_module.addCMacro("__USE_MS_EXTENSIONS", "1");
-    }
     exe.linkLibC();
     exe.addIncludePath(b.path("src"));
     exe.addIncludePath(b.path("src/headers"));
