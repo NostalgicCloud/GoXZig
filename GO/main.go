@@ -1,5 +1,8 @@
 package main
 
+/*
+#include <stdint.h>
+*/
 import (
 	"C"
 	"bufio"
@@ -10,10 +13,16 @@ import (
 )
 
 //export ServerInit
-func ServerInit(port int) {
-	listener = SetUpListener(port)
+func ServerInit(port int) C.int {
+	listener, err := SetUpListener(port)
+	if err != nil {
+		fmt.Println("Error setting up listener: ", err)
+		return C.int(0) // Return error code
+	}
 
 	go ListenForNewConnections(listener)
+
+	return C.int(1) // Return success code
 }
 
 //export ServerClose
@@ -75,15 +84,15 @@ func main() {
 	ReadInput()
 }
 
-func SetUpListener(port int) net.Listener {
+func SetUpListener(port int) (net.Listener, error) {
 	connections = make([]CloudConnection, 0)
 	ln, err := net.Listen("tcp", ":"+strconv.Itoa(port))
 	if err != nil {
 		fmt.Println(err)
-		os.Exit(1)
+		return nil, err
 	}
 	fmt.Println("Server listening on port", strconv.Itoa(port))
-	return ln
+	return ln, nil
 }
 
 func RemoveConnection(removeConn CloudConnection) {
