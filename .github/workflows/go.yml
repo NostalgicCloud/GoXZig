@@ -1,3 +1,4 @@
+# filepath: .github/workflows/go.yml
 # This workflow will build a golang project
 # For more information see: https://docs.github.com/en/actions/automating-builds-and-tests/building-and-testing-go
 
@@ -24,13 +25,17 @@ jobs:
     - name: Build Go Lib
       run: |
         cd GO
-         if (Test-Path "../src/headers/server.h") {
+        if (Test-Path "../src/headers/server.h") {
           Remove-Item "../src/headers/server.h"
-          }
-        if (Test-Path "../src/LIBS/server.a") {Remove-Item "../src/LIBS/server.a"}
+        }
+        if (Test-Path "../src/LIBS/server.a") {
+          Remove-Item "../src/LIBS/server.a"
+        }
         go build -o server.a -buildmode=c-archive ./main.go
-        copy server.h ../src/headers/server.h
-        copy server.a ../src/LIBS/server.a
+        New-Item -ItemType Directory -Force -Path "../src/headers"
+        New-Item -ItemType Directory -Force -Path "../src/LIBS"
+        Copy-Item -Path "server.h" -Destination "../src/headers/server.h"
+        Copy-Item -Path "server.a" -Destination "../src/LIBS/server.a"
 
     - name: Test Go Lib
       run: | 
@@ -47,12 +52,17 @@ jobs:
         zig version
         zig build
         
-    - name: Check built executable
+    - name: Create release directory and copy artifacts
       run: |
-        dir zig-out\bin
+        New-Item -ItemType Directory -Force -Path "release"
+        Copy-Item -Path "zig-out/bin/ZigxGo.exe" -Destination "release/"
         
-    - name: Prepare release artifact
+    - name: Verify release artifacts
       run: |
-        mkdir -p release
-        copy zig-out/bin/ZigxGo.exe release/
+        Get-ChildItem -Path "release"
         
+    - name: Upload release artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: ZigxGo-release
+        path: release/
