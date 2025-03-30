@@ -24,7 +24,7 @@ jobs:
     - name: Build
       run: |
         cd GO
-        go build -o ../src/LIBS/server.a -buildmode=c-archive ./server.go
+        go build -o ../src/LIBS/server.a -buildmode=c-archive ./main.go
 
     - name: Test
       run: go test -v ./...
