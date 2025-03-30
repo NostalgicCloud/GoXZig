@@ -50,3 +50,9 @@ jobs:
     - name: Check built executable
       run: |
         dir zig-out\bin
+        
+    - name: Prepare release artifact
+      run: |
+        mkdir -p release
+        copy zig-out/bin/ZigxGo.exe release/
+        
