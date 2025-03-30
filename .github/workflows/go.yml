@@ -24,8 +24,10 @@ jobs:
     - name: Build Go Lib
       run: |
         cd GO
-        if exist "../src/headers/server.h" (del "../src/headers/server.h")
-        if exist "../src/LIBS/server.a" (del "../src/LIBS/server.a")
+         if (Test-Path "../src/headers/server.h") {
+          Remove-Item "../src/headers/server.h"
+          }
+        if (Test-Path "../src/LIBS/server.a") {Remove-Item "../src/LIBS/server.a"}
         go build -o server.a -buildmode=c-archive ./main.go
         copy server.h ../src/headers/server.h
         copy server.a ../src/LIBS/server.a
