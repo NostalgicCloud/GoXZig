@@ -22,7 +22,7 @@ jobs:
         go-version: '1.24.1'
 
     - name: Build
-      run:
+      run: |
         cd GO
         go build -o ../src/LIBS/server.a -buildmode=c-archive ./server.go
 
