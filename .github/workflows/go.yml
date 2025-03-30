@@ -46,3 +46,7 @@ jobs:
       run: |
         zig version
         zig build
+        
+    - name: Check built executable
+      run: |
+        dir zig-out\bin
