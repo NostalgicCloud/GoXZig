@@ -24,11 +24,11 @@ jobs:
     - name: Build Go Lib
       run: |
         cd GO
-        [ -e "../src/headers/server.h" ] && rm -f "../src/headers/server.h"
-        [ -e "../src/LIBS/server.a" ] && rm -f "../src/LIBS/server.a"
+        if exist "../src/headers/server.h" (del "../src/headers/server.h")
+        if exist "../src/LIBS/server.a" (del "../src/LIBS/server.a")
         go build -o server.a -buildmode=c-archive ./main.go
-        cp server.h ../src/headers/server.h
-        cp server.a ../src/LIBS/server.a
+        copy server.h ../src/headers/server.h
+        copy server.a ../src/LIBS/server.a
 
     - name: Test Go Lib
       run: | 
