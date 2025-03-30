@@ -31,4 +31,6 @@ jobs:
         cp server.a ../src/LIBS/server.a
 
     - name: Test
-      run: go test -v .
+      run: | 
+        cd GO
+        go test -v .
