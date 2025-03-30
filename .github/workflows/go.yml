@@ -21,7 +21,7 @@ jobs:
       with:
         go-version: '1.24.1'
 
-    - name: Build
+    - name: Build Go Lib
       run: |
         cd GO
         [ -e "../src/headers/server.h" ] && rm -f "../src/headers/server.h"
@@ -30,7 +30,17 @@ jobs:
         cp server.h ../src/headers/server.h
         cp server.a ../src/LIBS/server.a
 
-    - name: Test
+    - name: Test Go Lib
       run: | 
         cd GO
         go test -v .
+
+    - name: Set Up Zig
+      uses: goto-bus-stop/setup-zig@v2
+      with:
+        version: 0.14.0
+
+    - name: Build Zig exe
+      run: |
+        zig version
+        zig build
