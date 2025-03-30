@@ -24,7 +24,11 @@ jobs:
     - name: Build
       run: |
         cd GO
-        go build -o ../src/LIBS/server.a -buildmode=c-archive ./main.go
+        if exist "../src/headers/server.h" del /F "../src/headers/server.h"
+        if exist "../src/LIBS/server.a" del /F "../src/LIBS/server.a"
+        go build -o server.a -buildmode=c-archive ./main.go
+        copy server.h ../src/headers/server.h
+        copy server.a ../src/LIBS/server.h
 
     - name: Test
-      run: go test -v ./...
+      run: go test -v .
