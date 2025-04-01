@@ -31,30 +31,63 @@ pub fn main() !void {
     // Initialize the Lua vm
     var lua = try Lua.init(allocator);
     defer lua.deinit();
+    lua.openLibs();
     std.debug.print("LUA IS SET UP\n", .{});
 
     //load Lua Files
-    const files = printAllLuaScripts(".\\src\\scripts");
+    const files = printAllLuaScripts(".\\src\\scripts\\") catch {
+        return error.LuaFileError;
+    };
     defer files.deinit();
 
+    for (files.items) |file| {
+        dprint("LOADING LUA FILE: {s}\n", .{file});
+        lua.doFile(file) catch |err| {
+            dprint("ERROR LOADING LUA FILE: {s}, ERROR: {}\n", .{ file, err });
+
+            // If available, print any error message from Lua
+            if (lua.isString(-1)) {
+                const errMsg = lua.toString(-1) catch "unknown error";
+                dprint("LUA ERROR MESSAGE: {s}\n", .{errMsg});
+            }
+            return err;
+        };
+    }
+
     // Add an integer to the Lua stack and retrieve it
-    lua.pushInteger(42);
-    dprint("{}\n", .{try lua.toInteger(1)});
+    // lua.pushInteger(42);
+    // dprint("{}\n", .{try lua.toInteger(1)});
     var inputBuff: [1024]u8 = undefined;
 
     while (true) {
+        _ = try lua.getGlobal("should_exit");
+        lua.call(.{ .args = 0, .results = 1 });
+        const shouldExit = lua.toBoolean(-1);
+        lua.pop(1);
+        if (shouldExit) {
+            dprint("Goodbye.\n", .{});
+            break;
+        }
+
         const bytesRead = try std.io.getStdIn().read(&inputBuff);
         if (bytesRead == 0) break;
 
         // Ensure we check only the bytes that were actually read
         const input = inputBuff[0..bytesRead];
         dprint("Read {} bytes: {s}\n", .{ bytesRead, input });
-        if (std.mem.eql(u8, std.mem.trim(u8, input, &std.ascii.whitespace), "exit")) {
-            break;
-        }
 
-        // Push the string to Lua with correct length
+        _ = try lua.getGlobal("handle_command");
         _ = lua.pushString(input);
+        lua.call(.{ .args = 1, .results = 1 });
+
+        if (lua.isString(-1)) {
+            const result = lua.toString(-1) catch "Error getting result";
+            dprint("Command result: {s}\n", .{result});
+        } else {
+            dprint("Command did not return a string\n", .{});
+        }
+        // Clean up the stack
+        lua.pop(1);
     }
 
     //server setup
@@ -95,15 +128,15 @@ fn ReadCurrentDir() !void {
     }
 }
 
-fn printAllLuaScripts(dirPath: []const u8) std.ArrayList([]const u8) {
+fn printAllLuaScripts(dirPath: []const u8) !std.ArrayList([:0]const u8) {
     const dirAllocator = std.heap.page_allocator;
-    var luaFiles = std.ArrayList([]const u8).init(dirAllocator);
-    defer luaFiles.deinit();
+    var luaFiles = std.ArrayList([:0]const u8).init(dirAllocator);
+    errdefer luaFiles.deinit();
 
     dprint("LOOKING FOR FILES IN: {s}\n", .{dirPath});
     var openDir = std.fs.cwd().openDir(dirPath, .{ .iterate = true }) catch {
         dprint("ERROR OPENING DIR: {s}\n", .{dirPath});
-        return luaFiles;
+        return error.PathOpenError;
     };
     defer openDir.close();
 
@@ -111,14 +144,32 @@ fn printAllLuaScripts(dirPath: []const u8) std.ArrayList([]const u8) {
     var dirIterator = openDir.iterate();
     while (dirIterator.next() catch |err| {
         std.debug.print("Error during directory iteration: {}\n", .{err});
-        return luaFiles;
+        return error.DirectoryIterationError;
     }) |dirContent| {
         if (std.mem.endsWith(u8, dirContent.name, ".lua"))
-            dprint("FOUND: {s}", .{dirContent.name});
-        luaFiles.append(dirContent.name) catch |err| {
+            dprint("FOUND: {s}\n", .{dirContent.name});
+        luaFiles.append(concat(dirAllocator, dirPath, dirContent.name) catch {
+            return error.ConcatDirectoryError;
+        }) catch |err| {
             std.debug.print("Error appending to ArrayList: {}\n", .{err});
-            return luaFiles;
+            return error.AppendDirectoryError;
         };
+        dprint("{s}\n", .{luaFiles.items[0]});
     }
     return luaFiles;
+}
+
+//thanks to https://ziglang.org/documentation/0.14.0/#String-Literals-and-Unicode-Code-Point-Literals
+fn concat(allocator: std.mem.Allocator, a: []const u8, b: []const u8) ![:0]u8 {
+    const result = try allocator.alloc(u8, a.len + b.len + 1);
+    const len = a.len + b.len;
+    if (len == 0) return error.ZeroSize; // EOF
+    if (len >= result.len) {
+        dprint("error: line too long!\n", .{});
+        return error.LineTooLong;
+    }
+    @memcpy(result[0..a.len], a);
+    @memcpy(result[a.len..len], b);
+    result[len] = 0; // Null-terminate the string
+    return result[0..len :0];
 }
